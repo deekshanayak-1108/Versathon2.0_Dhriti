@@ -11,7 +11,7 @@ export async function processStudyMaterial({ file, text }: { file?: File | null;
     formData.append("file", file);
   }
   if (text) {
-    formData.append("text", text);
+    formData.append("raw_text", text);
   }
   body = formData;
 

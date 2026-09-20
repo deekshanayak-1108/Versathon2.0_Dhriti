@@ -1,8 +1,11 @@
+from dotenv import load_dotenv
+load_dotenv()  # Loads variables from backend/.env into os.environ
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import router  # or your route import
+from app.api.routes import router
 
-app = FastAPI(title="RecallCraft API")
+app = FastAPI(title="Dhriti Engine")
 
 # Configure CORS
 app.add_middleware(

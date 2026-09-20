@@ -1,79 +1,152 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, ChangeEvent, DragEvent } from "react";
+import { UploadCloud, FileText, Loader2, Sparkles } from "lucide-react";
+import { StudyKit } from "@/types/study";
+import { processStudyMaterial } from "../lib/api";
 
 interface UploadZoneProps {
-  onProcessStart: () => void;
-  onProcessComplete: (data: any) => void;
-  onError: (error: string) => void;
+  onSuccess?: (data: StudyKit) => void;
+  onProcessComplete?: (data: StudyKit) => void;
+  onProcessStart?: () => void;
+  onError?: (err: string) => void;
 }
 
-export function UploadZone({ onProcessStart, onProcessComplete, onError }: UploadZoneProps) {
-  const [activeTab, setActiveTab] = useState<"file" | "text">("file");
-  const [text, setText] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+export const UploadZone: React.FC<UploadZoneProps> = ({
+  onSuccess,
+  onProcessComplete,
+  onProcessStart,
+  onError,
+}) => {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [rawText, setRawText] = useState("");
+  const [loadingStage, setLoadingStage] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
 
-  const handleUpload = async () => {
-    onProcessStart();
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setSelectedFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileInput = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!selectedFile && !rawText.trim()) {
+      const msg = "Please upload a PDF/text file or paste your lecture notes.";
+      setErrorMsg(msg);
+      onError?.(msg);
+      return;
+    }
+
+    setErrorMsg(null);
+    setLoadingStage("Reading and parsing document...");
+    onProcessStart?.();
+
     try {
-      const { processStudyMaterial } = await import("../lib/api");
-      let studyKit;
+      setTimeout(() => {
+        setLoadingStage("Generating flashcards and diagnostic quiz with AI...");
+      }, 1500);
 
-      if (activeTab === "file" && file) {
-        studyKit = await processStudyMaterial({ file });
-      } else if (activeTab === "text" && text) {
-        studyKit = await processStudyMaterial({ text });
-      } else {
-        throw new Error("Please provide a file or text content.");
-      }
-      onProcessComplete(studyKit);
+      const kit = await processStudyMaterial({
+        file: selectedFile,
+        text: rawText.trim()
+      });
+
+      onSuccess?.(kit);
+      onProcessComplete?.(kit);
     } catch (err: any) {
-      onError(err.message || "Failed to process material");
+      const msg = err.message || "An unexpected error occurred.";
+      setErrorMsg(msg);
+      onError?.(msg);
+    } finally {
+      setLoadingStage(null);
     }
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-6 bg-white rounded-xl shadow-lg border border-gray-100">
-      <div className="flex space-x-4 mb-6 border-b pb-2">
-        <button
-          className={`pb-2 px-4 ${activeTab === "file" ? "border-b-2 border-blue-600 text-blue-600 font-semibold" : "text-gray-500"}`}
-          onClick={() => setActiveTab("file")}
-        >
-          Upload PDF
-        </button>
-        <button
-          className={`pb-2 px-4 ${activeTab === "text" ? "border-b-2 border-blue-600 text-blue-600 font-semibold" : "text-gray-500"}`}
-          onClick={() => setActiveTab("text")}
-        >
-          Paste Notes
-        </button>
+    <div className="max-w-2xl mx-auto p-6 bg-white border border-slate-200 rounded-xl shadow-sm">
+      <div className="text-center mb-6">
+        <h2 className="text-2xl font-bold text-slate-800">Generate Study Revision Kit</h2>
+        <p className="text-sm text-slate-500 mt-1">
+          Upload class notes or paste lecture summaries to construct active recall decks.
+        </p>
       </div>
 
-      {activeTab === "file" ? (
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-blue-500 transition-colors">
-          <input
-            type="file"
-            accept=".pdf,.txt,.md"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-          />
-        </div>
-      ) : (
-        <textarea
-          className="w-full h-48 p-4 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-          placeholder="Paste your raw notes or study text here..."
-          value={text}
-          onChange={(e) => setText(e.target.value)}
+      {/* Drag & Drop Area */}
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDragOver(true);
+        }}
+        onDragLeave={() => setIsDragOver(false)}
+        onDrop={handleDrop}
+        className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center transition-colors cursor-pointer ${
+          isDragOver ? "border-indigo-500 bg-indigo-50/40" : "border-slate-300 hover:border-slate-400"
+        }`}
+        onClick={() => document.getElementById("file-upload")?.click()}
+      >
+        <input
+          id="file-upload"
+          type="file"
+          accept=".pdf,.txt"
+          className="hidden"
+          onChange={handleFileInput}
         />
+        <UploadCloud className="w-10 h-10 text-indigo-600 mb-2" />
+        <p className="text-sm font-medium text-slate-700">
+          {selectedFile ? selectedFile.name : "Click to select or drag a .pdf / .txt file here"}
+        </p>
+        <span className="text-xs text-slate-400 mt-1">Max standard lecture length</span>
+      </div>
+
+      <div className="relative my-4 text-center">
+        <span className="bg-white px-2 text-xs text-slate-400 uppercase tracking-wider relative z-10">
+          Or paste notes
+        </span>
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-slate-200" />
+        </div>
+      </div>
+
+      <textarea
+        rows={4}
+        placeholder="Paste your syllabus notes, markdown summary, or transcript here..."
+        value={rawText}
+        onChange={(e) => setRawText(e.target.value)}
+        className="w-full p-3 border border-slate-300 rounded-lg text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-4 resize-none"
+      />
+
+      {errorMsg && (
+        <div className="p-3 mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg">
+          {errorMsg}
+        </div>
       )}
 
       <button
-        onClick={handleUpload}
-        className="mt-6 w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50"
-        disabled={activeTab === "file" ? !file : !text}
+        onClick={handleSubmit}
+        disabled={loadingStage !== null}
+        className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold flex items-center justify-center space-x-2 transition disabled:opacity-50"
       >
-        Generate Study Kit
+        {loadingStage ? (
+          <>
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span className="text-sm">{loadingStage}</span>
+          </>
+        ) : (
+          <>
+            <Sparkles className="w-5 h-5" />
+            <span>Generate Study Module</span>
+          </>
+        )}
       </button>
     </div>
   );
-}
+};

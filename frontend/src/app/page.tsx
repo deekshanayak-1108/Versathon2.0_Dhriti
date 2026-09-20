@@ -77,7 +77,7 @@ export default function Home() {
       <main className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center">
         <div className="mb-12 text-center">
           <h1 className="text-5xl font-extrabold text-gray-900 tracking-tight mb-4">
-            Versathon <span className="text-blue-600">2.0</span>
+            Dhriti
           </h1>
           <p className="text-xl text-gray-500 max-w-xl mx-auto">
             Upload your lecture slides, PDFs, or raw notes and instantly generate a comprehensive study kit.
@@ -85,6 +85,7 @@ export default function Home() {
         </div>
 
         <UploadZone 
+          onSuccess={(data) => { setIsProcessing(false); setStudyKit(data); }}
           onProcessStart={() => { setIsProcessing(true); setError(null); }}
           onProcessComplete={(data) => { setIsProcessing(false); setStudyKit(data); }}
           onError={(err) => { setIsProcessing(false); setError(err); }}

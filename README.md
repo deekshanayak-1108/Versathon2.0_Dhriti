@@ -1,10 +1,10 @@
-# Versathon 2.0
+# Dhriti
 
 A full-stack, decoupled AI-powered study platform.
 
 ## Architecture
 - **Frontend**: Next.js (React), Tailwind CSS, Framer Motion
-- **Backend**: FastAPI (Python), Pydantic, Gemini API (GenAI)
+- **Backend**: FastAPI (Python), Pydantic, Groq API
 
 ## Setup Instructions
 
@@ -23,7 +23,7 @@ A full-stack, decoupled AI-powered study platform.
    pip install -r requirements.txt
    ```
 4. Set your API Key:
-   Rename `.env.example` to `.env` and add your `GEMINI_API_KEY`.
+   Rename `.env.example` to `.env` and add your `GROQ_API_KEY`.
 5. Run the server:
    ```bash
    uvicorn app.main:app --reload
@@ -46,4 +46,4 @@ A full-stack, decoupled AI-powered study platform.
    ```
 
 ## Usage
-Upload a PDF or paste notes directly into the web UI. The backend will parse the input and utilize Google Gemini to construct a structured JSON `StudyKit`, populating the React frontend with flashcards, quizzes, and a topic breakdown.
+Upload a PDF or paste notes directly into the web UI. The backend will parse the input and utilize Groq Cloud LLMs (e.g. openai/gpt-oss-120b) to construct a structured JSON `StudyKit`, populating the React frontend with flashcards, quizzes, and a topic breakdown.
